@@ -50,7 +50,9 @@ pip install -e .
 
 ```
 
-##Dataset PreparationFlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
+## Dataset Preparation
+
+FlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
 
 1. **Prepare Filelists:**
 Create text files listing the paths to your `.wav` files. The format expected by the dataloader is simply the path to the audio file (pipes `|` and additional text are ignored).
@@ -74,7 +76,9 @@ n_feats: 80        # Mel bands
 
 
 
-##TrainingTo train the FlowMAC model using the default experiment configuration (LJSpeech example):
+## Training
+
+To train the FlowMAC model using the default experiment configuration (LJSpeech example):
 
 ```bash
 python matcha/train.py experiment=flowmac_ljspeech
@@ -134,7 +138,9 @@ generated_mel = output['mel']
 
 ```
 
-##AcknowledgementsThis code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
+## Acknowledgements
+
+This code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
 
 * [vector-quantize-pytorch](https://github.com/lucidrains/vector-quantize-pytorch) for the Residual Vector Quantizer.
 * [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template) for the project structure.
