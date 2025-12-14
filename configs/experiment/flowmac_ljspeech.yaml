@@ -1,0 +1,28 @@
+# @package _global_
+
+defaults:
+  - override /data: ljspeech_flowmac
+  - override /model: flowmac
+  - override /callbacks: default
+  - override /trainer: gpu
+
+# Nome da task (usado para logs e checkpoints)
+task_name: "flowmac_ljspeech"
+run_name: "test_run"
+
+tags: ["flowmac", "ljspeech", "codec"]
+
+train:
+  monitor: "val/loss" # O FlowMAC monitora a perda total
+
+trainer:
+  max_epochs: 500
+  check_val_every_n_epoch: 1
+  precision: 16-mixed
+  gradient_clip_val: 1.0
+
+model:
+  optimizer:
+    _partial_: true
+    lr: 2e-4
+  n_feats: 80

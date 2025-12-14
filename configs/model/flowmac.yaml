@@ -1,0 +1,37 @@
+_target_: matcha.models.flowmac.FlowMAC
+
+n_feats: 80 # Ou 128 (Paper menciona 128 mel bands)
+
+encoder_params:
+  hidden_dim: 768 # Dimensão latente do Transformer
+  n_layers: 6     # "repeated N=6 times"
+  n_heads: 12     # Padrão comum para dim 768
+
+decoder_params:
+  #in_channels: 256 # Será sobrescrito pelo código (2*n_feats)
+  #out_channels: 128
+  channels: [256, 256]
+  dropout: 0.05
+  attention_head_dim: 64
+  n_blocks: 1
+  num_mid_blocks: 2
+  num_heads: 4
+  #act_fn: "snake"
+  act_fn: "gelu"
+
+cfm_params:
+  solver: "euler"
+  sigma_min: 1e-4
+
+quantizer_params:
+  codebook_size: 256 # "codebook size of 256"
+  num_quantizers: 8  # "8 quantizer stages"
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-4 # "learning rate 10^-4"
+  betas: [0.9, 0.999]
+  eps: 1e-8
+  weight_decay: 0.0
+
+scheduler: null # O paper não menciona scheduler complexo, apenas Adam fixo
