@@ -185,6 +185,7 @@ class FlowMAC(BaseLightningClass):
         
         return loss_total
 
+    '''
     def on_validation_end(self) -> None:
         if self.trainer.is_global_zero:
             # Pega um batch para visualização
@@ -221,3 +222,67 @@ class FlowMAC(BaseLightningClass):
                     self.current_epoch,
                     dataformats="HWC",
                 )
+    '''
+
+    def on_validation_end(self) -> None:
+        if self.trainer.is_global_zero:
+            # Import wandb apenas se necessário para evitar erros
+            try:
+                import wandb
+            except ImportError:
+                wandb = None
+
+            # Pega um batch para visualização
+            one_batch = next(iter(self.trainer.val_dataloaders))
+            
+            # Plota originais na primeira época
+            if self.current_epoch == 0:
+                for i in range(min(2, one_batch["y"].shape[0])):
+                    y = one_batch["y"][i].unsqueeze(0).to(self.device)
+                    numpy_img = plot_tensor(y.squeeze().cpu())
+                    
+                    # === Lógica Híbrida WandB / TensorBoard ===
+                    if hasattr(self.logger.experiment, "add_image"): # TensorBoard
+                        self.logger.experiment.add_image(
+                            f"original/{i}",
+                            numpy_img,
+                            self.current_epoch,
+                            dataformats="HWC",
+                        )
+                    elif wandb is not None and hasattr(self.logger.experiment, "log"): # WandB
+                        self.logger.experiment.log(
+                            {f"original/{i}": [wandb.Image(numpy_img, caption=f"Original {i}")]},
+                        )
+
+            # Sintetiza (Reconstrução)
+            for i in range(min(2, one_batch["y"].shape[0])):
+                y = one_batch["y"][i].unsqueeze(0).to(self.device)
+                
+                # Roda inferência
+                output = self.synthesise(y, n_timesteps=10)
+                
+                # Gera arrays numpy das imagens
+                img_cfm = plot_tensor(output["mel"].squeeze().cpu())
+                img_aux = plot_tensor(output["mel_aux"].squeeze().cpu())
+                
+                # === Lógica Híbrida WandB / TensorBoard ===
+                if hasattr(self.logger.experiment, "add_image"): # TensorBoard
+                    self.logger.experiment.add_image(
+                        f"generated_cfm/{i}",
+                        img_cfm,
+                        self.current_epoch,
+                        dataformats="HWC",
+                    )
+                    self.logger.experiment.add_image(
+                        f"generated_aux/{i}",
+                        img_aux,
+                        self.current_epoch,
+                        dataformats="HWC",
+                    )
+                elif wandb is not None and hasattr(self.logger.experiment, "log"): # WandB
+                    self.logger.experiment.log(
+                        {
+                            f"generated_cfm/{i}": [wandb.Image(img_cfm, caption=f"CFM Epoch {self.current_epoch}")],
+                            f"generated_aux/{i}": [wandb.Image(img_aux, caption=f"Aux Epoch {self.current_epoch}")]
+                        },
+                    )
