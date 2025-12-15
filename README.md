@@ -42,6 +42,12 @@ pip install -r requirements.txt
 pip install vector-quantize-pytorch
 
 ```
+Or, with you get some error:
+
+```bash
+pip install "cython<3" "numpy>=1.26"
+pip install -e . --no-build-isolation
+```
 
 3. Install the package in editable mode
 
@@ -83,6 +89,11 @@ To train the FlowMAC model using the default experiment configuration (LJSpeech 
 ```bash
 python matcha/train.py experiment=flowmac_ljspeech
 
+```
+To use wandb:
+
+```bash
+python matcha/train.py experiment=flowmac_ljspeech logger=wandb
 ```
 
 **Key Hyperparameters:**
@@ -126,7 +137,9 @@ generated_mel = output['mel']
 
 ```
 
-##CitationIf you use this code or the FlowMAC architecture, please cite the original paper:
+## Citation
+
+If you use this code or the FlowMAC architecture, please cite the original paper:
 
 ```text
 @article{pia2024flowmac,
