@@ -9,6 +9,27 @@ from omegaconf import DictConfig
 
 from matcha import utils
 
+import torch
+
+# Change the load function to allow checkpoint loading using weights_only = False.
+#Saves the original reference to the load function.
+_original_torch_load = torch.load
+
+def _force_unsafe_load(f, map_location=None, pickle_module=None, **pickle_load_args):
+    # HACK: Force weights_only = False, even if Lightning requested True.
+    if 'weights_only' in pickle_load_args:
+        pickle_load_args['weights_only'] = False
+    
+    # If it's not in the arguments (older versions), it explicitly defines it.
+    # Note: In Python versions below 3.10 this may vary, but in 3.12 it works like this.
+    pickle_load_args['weights_only'] = False
+    
+    return _original_torch_load(f, map_location, pickle_module, **pickle_load_args)
+
+# Applies the patch globally.
+torch.load = _force_unsafe_load
+
+
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # ------------------------------------------------------------------------------------ #
 # the setup_root above is equivalent to:
