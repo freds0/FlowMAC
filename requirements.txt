@@ -9,6 +9,10 @@ hydra-core==1.3.2
 hydra-colorlog==1.2.0
 hydra-optuna-sweeper==1.2.0
 
+# --------- FlowMAC dependencies --------- #
+vector-quantize-pytorch  # Necessário para o Quantizador Residual (RVQ)
+soundfile                # Necessário para salvar áudio na inferência
+
 # --------- loggers --------- #
 # wandb
 # neptune-client
@@ -18,6 +22,7 @@ hydra-optuna-sweeper==1.2.0
 
 # --------- others --------- #
 rootutils       # standardizing the project root setup
+pyrootutils
 pre-commit      # hooks for applying linters on commit
 rich            # beautiful text formatting in terminal
 pytest          # tests

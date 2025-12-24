@@ -1,4 +1,4 @@
-_target_: matcha.models.flowmac.FlowMAC
+_target_: flowmac.models.flowmac.FlowMAC
 
 n_feats: 80 # Ou 128 (Paper menciona 128 mel bands)
 

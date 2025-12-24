@@ -42,12 +42,6 @@ pip install -r requirements.txt
 pip install vector-quantize-pytorch
 
 ```
-Or, with you get some error:
-
-```bash
-pip install "cython<3" "numpy>=1.26"
-pip install -e . --no-build-isolation
-```
 
 3. Install the package in editable mode
 
@@ -56,9 +50,7 @@ pip install -e .
 
 ```
 
-## Dataset Preparation
-
-FlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
+##Dataset PreparationFlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
 
 1. **Prepare Filelists:**
 Create text files listing the paths to your `.wav` files. The format expected by the dataloader is simply the path to the audio file (pipes `|` and additional text are ignored).
@@ -82,18 +74,11 @@ n_feats: 80        # Mel bands
 
 
 
-## Training
-
-To train the FlowMAC model using the default experiment configuration (LJSpeech example):
+##TrainingTo train the FlowMAC model using the default experiment configuration (LJSpeech example):
 
 ```bash
 python matcha/train.py experiment=flowmac_ljspeech
 
-```
-To use wandb:
-
-```bash
-python matcha/train.py experiment=flowmac_ljspeech logger=wandb
 ```
 
 **Key Hyperparameters:**
@@ -117,8 +102,8 @@ python matcha/train.py experiment=flowmac_ljspeech data.batch_size=16 run_name=m
 
 ```python
 import torch
-from matcha.models.flowmac import FlowMAC
-from matcha.utils.audio import mel_spectrogram, load_audio
+from flowmac.flowmac import FlowMAC
+from flowmac.flowmac.utils.audio import mel_spectrogram, load_audio
 
 # Load Model
 model = FlowMAC.load_from_checkpoint("path/to/checkpoint.ckpt")
@@ -137,9 +122,7 @@ generated_mel = output['mel']
 
 ```
 
-## Citation
-
-If you use this code or the FlowMAC architecture, please cite the original paper:
+##CitationIf you use this code or the FlowMAC architecture, please cite the original paper:
 
 ```text
 @article{pia2024flowmac,
@@ -151,9 +134,7 @@ If you use this code or the FlowMAC architecture, please cite the original paper
 
 ```
 
-## Acknowledgements
-
-This code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
+##AcknowledgementsThis code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
 
 * [vector-quantize-pytorch](https://github.com/lucidrains/vector-quantize-pytorch) for the Residual Vector Quantizer.
 * [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template) for the project structure.
