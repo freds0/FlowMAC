@@ -11,7 +11,7 @@
 
 </div>
 
-> **Abstract:** This is an implementation of **FlowMAC**, a novel neural audio codec for high-quality general audio compression at low bit rates based on Conditional Flow Matching (CFM). FlowMAC jointly learns a mel spectrogram encoder, quantizer (RVQ), and decoder. At inference time, the decoder integrates a continuous normalizing flow via an ODE solver to generate high-quality mel spectrograms from the quantized latent representation.
+> **Abstract:** This is an unofficial implementation of **FlowMAC**, a novel neural audio codec for high-quality general audio compression at low bit rates based on Conditional Flow Matching (CFM). FlowMAC jointly learns a mel spectrogram encoder, quantizer (RVQ), and decoder. At inference time, the decoder integrates a continuous normalizing flow via an ODE solver to generate high-quality mel spectrograms from the quantized latent representation.
 
 This codebase is adapted from [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) to support **Audio-to-Audio** reconstruction tasks instead of Text-to-Speech.
 
@@ -50,7 +50,9 @@ pip install -e .
 
 ```
 
-##Dataset PreparationFlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
+## Dataset Preparation
+
+FlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
 
 1. **Prepare Filelists:**
 Create text files listing the paths to your `.wav` files. The format expected by the dataloader is simply the path to the audio file (pipes `|` and additional text are ignored).
@@ -74,10 +76,12 @@ n_feats: 80        # Mel bands
 
 
 
-##TrainingTo train the FlowMAC model using the default experiment configuration (LJSpeech example):
+## Training
+
+To train the FlowMAC model using the default experiment configuration (LJSpeech example):
 
 ```bash
-python matcha/train.py experiment=flowmac_ljspeech
+python flowmac/train.py experiment=flowmac_ljspeech
 
 ```
 
@@ -96,7 +100,9 @@ python matcha/train.py experiment=flowmac_ljspeech data.batch_size=16 run_name=m
 
 ```
 
-##Inference / ReconstructionDuring training, the model automatically logs reconstructions to TensorBoard. To run inference manually on audio files (Analysis-Synthesis):
+## Inference / Reconstruction
+
+During training, the model automatically logs reconstructions to TensorBoard. To run inference manually on audio files (Analysis-Synthesis):
 
 *(Note: CLI for pure audio reconstruction is currently under development. You can use the model directly in Python)*
 
@@ -122,19 +128,9 @@ generated_mel = output['mel']
 
 ```
 
-##CitationIf you use this code or the FlowMAC architecture, please cite the original paper:
+## Acknowledgements
 
-```text
-@article{pia2024flowmac,
-  title={FlowMAC: Conditional Flow Matching for Audio Coding at Low Bit Rates},
-  author={Pia, Nicola and Strauss, Martin and Multrus, Markus and Edler, Bernd},
-  journal={arXiv preprint arXiv:2409.17635},
-  year={2024}
-}
-
-```
-
-##AcknowledgementsThis code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
+This code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
 
 * [vector-quantize-pytorch](https://github.com/lucidrains/vector-quantize-pytorch) for the Residual Vector Quantizer.
 * [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template) for the project structure.
