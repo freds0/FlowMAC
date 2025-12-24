@@ -74,10 +74,12 @@ n_feats: 80        # Mel bands
 
 
 
-## TrainingTo train the FlowMAC model using the default experiment configuration (LJSpeech example):
+## Training
+
+To train the FlowMAC model using the default experiment configuration (LJSpeech example):
 
 ```bash
-python matcha/train.py experiment=flowmac_ljspeech
+python flowmac/train.py experiment=flowmac_ljspeech
 
 ```
 
@@ -96,7 +98,9 @@ python matcha/train.py experiment=flowmac_ljspeech data.batch_size=16 run_name=m
 
 ```
 
-## Inference / ReconstructionDuring training, the model automatically logs reconstructions to TensorBoard. To run inference manually on audio files (Analysis-Synthesis):
+## Inference / Reconstruction
+
+During training, the model automatically logs reconstructions to TensorBoard. To run inference manually on audio files (Analysis-Synthesis):
 
 *(Note: CLI for pure audio reconstruction is currently under development. You can use the model directly in Python)*
 
@@ -122,7 +126,9 @@ generated_mel = output['mel']
 
 ```
 
-## AcknowledgementsThis code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
+## Acknowledgements
+
+This code is heavily based on [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS). We also acknowledge the use of:
 
 * [vector-quantize-pytorch](https://github.com/lucidrains/vector-quantize-pytorch) for the Residual Vector Quantizer.
 * [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template) for the project structure.
