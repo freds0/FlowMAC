@@ -1,0 +1,25 @@
+_target_: flowmac.data.audio_datamodule.AudioDataModule
+name: ljspeech
+# We use the same filelists as Matcha, since AudioDataset reads only the first column (path)
+train_filelist_path: configs/data/filelists/libritts_train.txt
+valid_filelist_path: configs/data/filelists/libritts_test.txt
+batch_size: 6 # FlowMAC usually allows larger batches than TTS
+num_workers: 4
+pin_memory: True
+
+# Audio Parameters (Adjusted for the FlowMAC Paper)
+n_fft: 1024
+n_feats: 80       # The paper mentions 128, but standard LJSpeech uses 80. If changed, regenerate stats.
+sample_rate: 24000 # Native LJSpeech. The paper uses 24kHz (the dataloader will resample if configured)
+hop_length: 256
+win_length: 1024
+f_min: 0
+f_max: 8000
+
+# Normalization Statistics (Mel Mean/Std)
+# Approximate values for LJSpeech (or recalculate using utils/generate_data_statistics.py)
+data_statistics:
+  mel_mean: -5.577248
+  mel_std: 2.437312
+
+seed: ${seed}
