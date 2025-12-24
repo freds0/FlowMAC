@@ -50,7 +50,9 @@ pip install -e .
 
 ```
 
-## Dataset PreparationFlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
+## Dataset Preparation
+
+FlowMAC is an audio codec, so it requires a dataset of audio files (e.g., LJSpeech, LibriTTS, or music).
 
 1. **Prepare Filelists:**
 Create text files listing the paths to your `.wav` files. The format expected by the dataloader is simply the path to the audio file (pipes `|` and additional text are ignored).
