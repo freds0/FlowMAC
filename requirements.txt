@@ -29,6 +29,7 @@ pytest          # tests
 # sh            # for running bash commands in some tests (linux/macos only)
 phonemizer      # phonemization of text
 tensorboard
+wandb>=0.12.10
 librosa
 Cython
 numpy
