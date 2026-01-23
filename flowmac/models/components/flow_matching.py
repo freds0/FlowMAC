@@ -30,7 +30,7 @@ class BASECFM(torch.nn.Module, ABC):
         self.estimator = None
 
     @torch.inference_mode()
-    def forward(self, mu, mask, n_timesteps, temperature=1.0, spks=None, cond=None):
+    def forward(self, mu, mask, n_timesteps, temperature=1.0, spks=None, cond=None, z_q=None):
         """Forward diffusion
 
         Args:
@@ -43,6 +43,8 @@ class BASECFM(torch.nn.Module, ABC):
             spks (torch.Tensor, optional): speaker ids. Defaults to None.
                 shape: (batch_size, spk_emb_dim)
             cond: Not used but kept for future purposes
+            z_q (torch.Tensor, optional): quantized latent for cross-attention conditioning.
+                shape: (batch_size, hidden_dim, mel_timesteps)
 
         Returns:
             sample: generated mel-spectrogram
@@ -50,9 +52,9 @@ class BASECFM(torch.nn.Module, ABC):
         """
         z = torch.randn_like(mu) * temperature
         t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
-        return self.solve_euler(z, t_span=t_span, mu=mu, mask=mask, spks=spks, cond=cond)
+        return self.solve_euler(z, t_span=t_span, mu=mu, mask=mask, spks=spks, cond=cond, z_q=z_q)
 
-    def solve_euler(self, x, t_span, mu, mask, spks, cond):
+    def solve_euler(self, x, t_span, mu, mask, spks, cond, z_q=None):
         """
         Fixed euler solver for ODEs.
         Args:
@@ -66,6 +68,8 @@ class BASECFM(torch.nn.Module, ABC):
             spks (torch.Tensor, optional): speaker ids. Defaults to None.
                 shape: (batch_size, spk_emb_dim)
             cond: Not used but kept for future purposes
+            z_q (torch.Tensor, optional): quantized latent for cross-attention conditioning.
+                shape: (batch_size, hidden_dim, mel_timesteps)
         """
         t, _, dt = t_span[0], t_span[-1], t_span[1] - t_span[0]
 
@@ -74,7 +78,7 @@ class BASECFM(torch.nn.Module, ABC):
         sol = []
 
         for step in range(1, len(t_span)):
-            dphi_dt = self.estimator(x, mask, mu, t, spks, cond)
+            dphi_dt = self.estimator(x, mask, mu, t, spks, cond, encoder_hidden_states=z_q)
 
             x = x + dt * dphi_dt
             t = t + dt
@@ -84,7 +88,7 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
-    def compute_loss(self, x1, mask, mu, spks=None, cond=None):
+    def compute_loss(self, x1, mask, mu, spks=None, cond=None, z_q=None):
         """Computes diffusion loss
 
         Args:
@@ -96,6 +100,8 @@ class BASECFM(torch.nn.Module, ABC):
                 shape: (batch_size, n_feats, mel_timesteps)
             spks (torch.Tensor, optional): speaker embedding. Defaults to None.
                 shape: (batch_size, spk_emb_dim)
+            z_q (torch.Tensor, optional): quantized latent for cross-attention conditioning.
+                shape: (batch_size, hidden_dim, mel_timesteps)
 
         Returns:
             loss: conditional flow matching loss
@@ -112,9 +118,11 @@ class BASECFM(torch.nn.Module, ABC):
         y = (1 - (1 - self.sigma_min) * t) * z + t * x1
         u = x1 - (1 - self.sigma_min) * z
 
-        loss = F.mse_loss(self.estimator(y, mask, mu, t.squeeze(), spks), u, reduction="sum") / (
-            torch.sum(mask) * u.shape[1]
-        )
+        loss = F.mse_loss(
+            self.estimator(y, mask, mu, t.squeeze(), spks, cond, encoder_hidden_states=z_q),
+            u,
+            reduction="sum"
+        ) / (torch.sum(mask) * u.shape[1])
         return loss, y
 
 

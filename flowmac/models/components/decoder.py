@@ -212,11 +212,13 @@ class Decoder(nn.Module):
         down_block_type="transformer",
         mid_block_type="transformer",
         up_block_type="transformer",
+        cross_attention_dim=None,  # Dimensao do z_q para Cross-Attention
     ):
         super().__init__()
         channels = tuple(channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.cross_attention_dim = cross_attention_dim  # Store for use in forward
 
         self.time_embeddings = SinusoidalPosEmb(in_channels)
         time_embed_dim = channels[0] * 4
@@ -245,6 +247,7 @@ class Decoder(nn.Module):
                         num_heads,
                         dropout,
                         act_fn,
+                        cross_attention_dim=cross_attention_dim,
                     )
                     for _ in range(n_blocks)
                 ]
@@ -270,6 +273,7 @@ class Decoder(nn.Module):
                         num_heads,
                         dropout,
                         act_fn,
+                        cross_attention_dim=cross_attention_dim,
                     )
                     for _ in range(n_blocks)
                 ]
@@ -297,6 +301,7 @@ class Decoder(nn.Module):
                         num_heads,
                         dropout,
                         act_fn,
+                        cross_attention_dim=cross_attention_dim,
                     )
                     for _ in range(n_blocks)
                 ]
@@ -316,7 +321,7 @@ class Decoder(nn.Module):
         # nn.init.normal_(self.final_proj.weight)
 
     @staticmethod
-    def get_block(block_type, dim, attention_head_dim, num_heads, dropout, act_fn):
+    def get_block(block_type, dim, attention_head_dim, num_heads, dropout, act_fn, cross_attention_dim=None):
         if block_type == "conformer":
             block = ConformerWrapper(
                 dim=dim,
@@ -336,6 +341,7 @@ class Decoder(nn.Module):
                 attention_head_dim=attention_head_dim,
                 dropout=dropout,
                 activation_fn=act_fn,
+                cross_attention_dim=cross_attention_dim,  # Habilita Cross-Attention com z_q
             )
         else:
             raise ValueError(f"Unknown block type {block_type}")
@@ -360,7 +366,7 @@ class Decoder(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def forward(self, x, mask, mu, t, spks=None, cond=None):
+    def forward(self, x, mask, mu, t, spks=None, cond=None, encoder_hidden_states=None):
         """Forward pass of the UNet1DConditional model.
 
         Args:
@@ -369,13 +375,11 @@ class Decoder(nn.Module):
             t (_type_): shape (batch_size)
             spks (_type_, optional): shape: (batch_size, condition_channels). Defaults to None.
             cond (_type_, optional): placeholder for future use. Defaults to None.
-
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
+            encoder_hidden_states (torch.Tensor, optional): z_q for cross-attention conditioning.
+                shape: (batch_size, hidden_dim, time) - will be transposed for attention.
 
         Returns:
-            _type_: _description_
+            torch.Tensor: Generated output with shape (batch_size, out_channels, time)
         """
 
         t = self.time_embeddings(t)
@@ -387,6 +391,11 @@ class Decoder(nn.Module):
             spks = repeat(spks, "b c -> b c t", t=x.shape[-1])
             x = pack([x, spks], "b * t")[0]
 
+        # Prepare encoder_hidden_states for cross-attention (transpose to [B, T, C])
+        encoder_hidden_states_t = None
+        if encoder_hidden_states is not None:
+            encoder_hidden_states_t = rearrange(encoder_hidden_states, "b c t -> b t c")
+
         hiddens = []
         masks = [mask]
         for resnet, transformer_blocks, downsample in self.down_blocks:
@@ -394,11 +403,16 @@ class Decoder(nn.Module):
             x = resnet(x, mask_down, t)
             x = rearrange(x, "b c t -> b t c")
             mask_down = rearrange(mask_down, "b 1 t -> b t")
+
+            # Resample encoder_hidden_states to match current resolution
+            enc_hs = self._resample_encoder_states(encoder_hidden_states_t, x.shape[1]) if encoder_hidden_states_t is not None else None
+
             for transformer_block in transformer_blocks:
                 x = transformer_block(
                     hidden_states=x,
                     attention_mask=mask_down,
                     timestep=t,
+                    encoder_hidden_states=enc_hs,
                 )
             x = rearrange(x, "b t c -> b c t")
             mask_down = rearrange(mask_down, "b t -> b 1 t")
@@ -413,11 +427,16 @@ class Decoder(nn.Module):
             x = resnet(x, mask_mid, t)
             x = rearrange(x, "b c t -> b t c")
             mask_mid = rearrange(mask_mid, "b 1 t -> b t")
+
+            # Resample encoder_hidden_states to match current resolution
+            enc_hs = self._resample_encoder_states(encoder_hidden_states_t, x.shape[1]) if encoder_hidden_states_t is not None else None
+
             for transformer_block in transformer_blocks:
                 x = transformer_block(
                     hidden_states=x,
                     attention_mask=mask_mid,
                     timestep=t,
+                    encoder_hidden_states=enc_hs,
                 )
             x = rearrange(x, "b t c -> b c t")
             mask_mid = rearrange(mask_mid, "b t -> b 1 t")
@@ -427,11 +446,16 @@ class Decoder(nn.Module):
             x = resnet(pack([x, hiddens.pop()], "b * t")[0], mask_up, t)
             x = rearrange(x, "b c t -> b t c")
             mask_up = rearrange(mask_up, "b 1 t -> b t")
+
+            # Resample encoder_hidden_states to match current resolution
+            enc_hs = self._resample_encoder_states(encoder_hidden_states_t, x.shape[1]) if encoder_hidden_states_t is not None else None
+
             for transformer_block in transformer_blocks:
                 x = transformer_block(
                     hidden_states=x,
                     attention_mask=mask_up,
                     timestep=t,
+                    encoder_hidden_states=enc_hs,
                 )
             x = rearrange(x, "b t c -> b c t")
             mask_up = rearrange(mask_up, "b t -> b 1 t")
@@ -441,3 +465,24 @@ class Decoder(nn.Module):
         output = self.final_proj(x * mask_up)
 
         return output * mask
+
+    def _resample_encoder_states(self, encoder_hidden_states, target_len):
+        """Resample encoder hidden states to match target temporal resolution.
+
+        Args:
+            encoder_hidden_states: [B, T_orig, C] tensor
+            target_len: Target temporal length
+
+        Returns:
+            Resampled tensor with shape [B, target_len, C]
+        """
+        if encoder_hidden_states is None:
+            return None
+
+        if encoder_hidden_states.shape[1] == target_len:
+            return encoder_hidden_states
+
+        # Transpose to [B, C, T] for interpolation, then back to [B, T, C]
+        enc = rearrange(encoder_hidden_states, "b t c -> b c t")
+        enc = F.interpolate(enc, size=target_len, mode="linear", align_corners=False)
+        return rearrange(enc, "b c t -> b t c")

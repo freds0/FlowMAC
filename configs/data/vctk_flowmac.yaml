@@ -1,0 +1,27 @@
+_target_: flowmac.data.audio_datamodule.AudioDataModule
+name: vctk
+
+# Filelists (devem ser geradas para o dataset VCTK)
+train_filelist_path: configs/data/filelists/vctk_audio_train_filelist.txt
+valid_filelist_path: configs/data/filelists/vctk_audio_val_filelist.txt
+batch_size: 2
+num_workers: 4
+pin_memory: True
+
+# Audio Parameters - High Fidelity Configuration
+# Aumentamos a resolucao para capturar frequencias mais altas (full-band)
+sample_rate: 44100    # Full-band audio (anteriormente 22050)
+n_fft: 2048           # FFT size aumentado para melhor resolucao frequencial (anteriormente 1024)
+n_feats: 128          # Mel bands aumentados para mais detalhes (anteriormente 80)
+hop_length: 512       # Ajustado proporcionalmente ao sample_rate
+win_length: 2048      # Igual ao n_fft para janela completa (anteriormente 1024)
+f_min: 0
+f_max: 22050          # Nyquist frequency para 44.1kHz (anteriormente 8000)
+
+# Normalization Statistics (devem ser recalculadas para VCTK com novos parametros)
+# Use utils/generate_data_statistics.py para recalcular
+data_statistics:
+  mel_mean: -6.630575      # Placeholder - recalcular!
+  mel_std:  2.482914       # Placeholder - recalcular!
+
+seed: ${seed}

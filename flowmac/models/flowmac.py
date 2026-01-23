@@ -105,12 +105,14 @@ class FlowMAC(BaseLightningClass):
 
         # --- 4. Flow Matching ---
         # CFM tries to generate 'y' (target) conditioned on 'y_hat_aux'
+        # Additionally, z_q is passed for cross-attention conditioning (dense conditioning)
         # Note: Matcha's compute_loss method generally expects 'mu' as the condition.
         loss_cfm, _ = self.decoder.compute_loss(
             x1=y,          # Target (Real Mel)
-            mask=y_mask, 
+            mask=y_mask,
             mu=y_hat_aux,  # Condition (Decoded Mel from VQ)
-            spks=None
+            spks=None,
+            z_q=z_q        # Dense conditioning via cross-attention
         )
 
         # --- 5. Loss Calculation ---
@@ -147,11 +149,13 @@ class FlowMAC(BaseLightningClass):
 
         # 4. CFM Sampling
         # Generates high-fidelity Mel from noise + condition (y_hat_aux)
+        # z_q is passed for cross-attention conditioning (dense conditioning)
         generated_mel = self.decoder(
-            mu=y_hat_aux, 
-            mask=mask, 
-            n_timesteps=n_timesteps, 
-            temperature=temperature
+            mu=y_hat_aux,
+            mask=mask,
+            n_timesteps=n_timesteps,
+            temperature=temperature,
+            z_q=z_q        # Dense conditioning via cross-attention
         )
         
         return {

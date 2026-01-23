@@ -1,0 +1,40 @@
+_target_: flowmac.models.flowmac.FlowMAC
+
+# High-Fidelity Configuration
+n_feats: 128  # Compativel com o config de dados VCTK (aumentado de 80)
+
+encoder_params:
+  hidden_dim: 1024    # Aumentado de 768 para maior capacidade
+  n_layers: 6         # Mantido igual
+  n_heads: 16         # Ajustado para hidden_dim 1024 (1024/64=16)
+
+decoder_params:
+  # Capacidade aumentada do U-Net
+  channels: [512, 512, 1024]  # Aumentado de [256, 256] para maior profundidade
+  dropout: 0.05
+  attention_head_dim: 64
+  n_blocks: 2         # Aumentado de 1 para mais blocos de atencao
+  num_mid_blocks: 3   # Aumentado de 2 para bottleneck mais poderoso
+  num_heads: 8        # Aumentado de 4
+  act_fn: "gelu"
+  # Cross-Attention com z_q para condicionamento denso (Fase 3)
+  # Deve ser igual ao hidden_dim do encoder
+  cross_attention_dim: 1024
+
+cfm_params:
+  solver: "euler"
+  sigma_min: 1e-4
+
+quantizer_params:
+  codebook_size: 1024    # Aumentado de 256 para 1024 (10-bit vs 8-bit)
+  num_quantizers: 12     # Aumentado de 8 para 12 (maior bitrate ~4.5kbps)
+  # Alternativa: num_quantizers: 16 para ~6kbps
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-4
+  betas: [0.9, 0.999]
+  eps: 1e-8
+  weight_decay: 0.0
+
+scheduler: null
